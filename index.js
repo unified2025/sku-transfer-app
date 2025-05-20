@@ -6,6 +6,10 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+const cors = require("cors");
+app.use(cors());
+
+
 app.post("/transfer", async (req, res) => {
   const { sourceSku, destinationSku, quantity } = req.body;
 
