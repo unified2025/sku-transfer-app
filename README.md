@@ -1,6 +1,6 @@
-# SKU Transfer App
+# SKU Transfer App (with CORS)
 
-A simple Node.js app that allows SKU-to-SKU inventory transfers using the Sellercloud API.
+Node.js app for transferring inventory between SKUs using the Sellercloud API.
 
 ## Setup
 
@@ -18,7 +18,7 @@ A simple Node.js app that allows SKU-to-SKU inventory transfers using the Seller
 
 ### POST `/transfer`
 
-**Body**:
+**Request Body:**
 ```json
 {
   "sourceSku": "SKU123",

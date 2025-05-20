@@ -1,14 +1,12 @@
 const express = require("express");
 const axios = require("axios");
 const dotenv = require("dotenv");
+const cors = require("cors");
 
 dotenv.config();
 const app = express();
-app.use(express.json());
-
-const cors = require("cors");
 app.use(cors());
-
+app.use(express.json());
 
 app.post("/transfer", async (req, res) => {
   const { sourceSku, destinationSku, quantity } = req.body;
