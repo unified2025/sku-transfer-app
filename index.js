@@ -57,7 +57,7 @@ app.post("/transfer", async (req, res) => {
     };
 
     const response = await axios.post(
-      `${SELLERCLOUD_BASE_URL}/api/inventory/transfer`,
+      `${SELLERCLOUD_BASE_URL}/api/inventory/SkuToSkuTransfers`,
       payload,
       {
         headers: {
