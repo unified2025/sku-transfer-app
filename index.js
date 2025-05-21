@@ -16,7 +16,6 @@ let tokenExpiresAt = 0;
 async function getSellercloudAuthToken() {
   const now = Date.now();
 
-  // Debug environment variables
   console.log("🔍 SC_USERNAME loaded:", process.env.SC_USERNAME ? "✅ Present" : "❌ Missing");
   console.log("🔍 SC_PASSWORD loaded:", process.env.SC_PASSWORD ? "✅ Present" : "❌ Missing");
 
@@ -55,21 +54,19 @@ app.post("/transfer", async (req, res) => {
   try {
     const token = await getSellercloudAuthToken();
 
-   const payload = {
+    const payload = {
       FromSKU: sourceSku,
       ToSKU: destinationSku,
       Qty: quantity,
       FromWarehouseID: fromWarehouseId,
-      ToWarehouseID: toWarehouseId,
       TransferReason: transferReason || "Transfer from web"
     };
 
-    // Only add optional fields if they are defined and non-empty
+    // Add optional fields only if defined
+    if (toWarehouseId) payload.ToWarehouseID = toWarehouseId;
     if (fromBinId) payload.FromBinID = fromBinId;
     if (toBinId) payload.ToBinID = toBinId;
     if (serialNumbers && serialNumbers.trim()) payload.SerialNumbers = serialNumbers;
-
-
 
     console.log("📦 Sending payload to Sellercloud:", JSON.stringify(payload, null, 2));
 
@@ -86,15 +83,15 @@ app.post("/transfer", async (req, res) => {
     res.json({ success: true, data: response.data });
   } catch (error) {
     console.error("❌ Transfer error:", error.response?.data || error.message);
-   if (error.response && error.response.data) {
-  res.status(error.response.status).json({
-    success: false,
-    error: error.response.data
-  });
-} else {
-  res.status(500).json({ success: false, error: error.message });
-}
 
+    if (error.response && error.response.data) {
+      res.status(error.response.status).json({
+        success: false,
+        error: error.response.data
+      });
+    } else {
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
 });
 
