@@ -8,19 +8,57 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const SELLERCLOUD_BASE_URL = "https://unifiedsolutions.api.sellercloud.com/rest";
+
+let sellercloudToken = null;
+let tokenExpiresAt = 0;
+
+async function getSellercloudAuthToken() {
+  const now = Date.now();
+
+  if (sellercloudToken && now < tokenExpiresAt) {
+    return sellercloudToken;
+  }
+
+  const response = await axios.post(`${SELLERCLOUD_BASE_URL}/api/token`, {
+    Username: process.env.SC_USERNAME,
+    Password: process.env.SC_PASSWORD
+  });
+
+  const { access_token, expires_in } = response.data;
+
+  sellercloudToken = access_token;
+  tokenExpiresAt = now + expires_in * 1000 - 30000;
+
+  return sellercloudToken;
+}
+
 app.post("/transfer", async (req, res) => {
-  const { sourceSku, destinationSku, quantity } = req.body;
+  const {
+    sourceSku, destinationSku, quantity,
+    fromWarehouseId, toWarehouseId,
+    fromBinId, toBinId,
+    transferReason, serialNumbers
+  } = req.body;
 
   try {
     const token = await getSellercloudAuthToken();
 
+    const payload = {
+      FromSKU: sourceSku,
+      ToSKU: destinationSku,
+      Qty: quantity,
+      FromWarehouseID: fromWarehouseId,
+      ToWarehouseID: toWarehouseId,
+      FromBinID: fromBinId,
+      ToBinID: toBinId,
+      TransferReason: transferReason,
+      SerialNumbers: serialNumbers
+    };
+
     const response = await axios.post(
-      "https://api.sellercloud.com/api/inventory/transfer",
-      {
-        FromSKU: sourceSku,
-        ToSKU: destinationSku,
-        Quantity: quantity
-      },
+      `${SELLERCLOUD_BASE_URL}/api/inventory/transfer`,
+      payload,
       {
         headers: {
           Authorization: `Bearer ${token}`
@@ -30,21 +68,11 @@ app.post("/transfer", async (req, res) => {
 
     res.json({ success: true, data: response.data });
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error("Transfer error:", error.response?.data || error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-async function getSellercloudAuthToken() {
-  const res = await axios.post("https://api.sellercloud.com/api/token", {
-    username: process.env.SC_USERNAME,
-    password: process.env.SC_PASSWORD,
-    client_id: process.env.SC_CLIENT_ID,
-    grant_type: "password"
-  });
-  return res.data.access_token;
-}
-
 app.listen(3000, () => {
-  console.log("Server running on port 3000");
+  console.log("SKU Transfer backend running on port 3000");
 });
