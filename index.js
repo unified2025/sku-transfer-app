@@ -20,18 +20,25 @@ async function getSellercloudAuthToken() {
     return sellercloudToken;
   }
 
-  const response = await axios.post(`${SELLERCLOUD_BASE_URL}/api/token`, {
-    Username: process.env.SC_USERNAME,
-    Password: process.env.SC_PASSWORD
-  });
+  try {
+    const response = await axios.post(`${SELLERCLOUD_BASE_URL}/api/token`, {
+      Username: process.env.SC_USERNAME,
+      Password: process.env.SC_PASSWORD
+    });
 
-  const { access_token, expires_in } = response.data;
+    console.log("✅ Token response:", response.data);
 
-  sellercloudToken = access_token;
-  tokenExpiresAt = now + expires_in * 1000 - 30000;
+    const { access_token, expires_in } = response.data;
+    sellercloudToken = access_token;
+    tokenExpiresAt = now + expires_in * 1000 - 30000;
+    return sellercloudToken;
 
-  return sellercloudToken;
+  } catch (error) {
+    console.error("❌ Token fetch failed:", error.response?.data || error.message);
+    throw new Error("Failed to get token");
+  }
 }
+
 
 app.post("/transfer", async (req, res) => {
   const {
