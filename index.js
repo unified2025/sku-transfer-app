@@ -86,7 +86,15 @@ app.post("/transfer", async (req, res) => {
     res.json({ success: true, data: response.data });
   } catch (error) {
     console.error("❌ Transfer error:", error.response?.data || error.message);
-    res.status(500).json({ success: false, error: error.message });
+   if (error.response && error.response.data) {
+  res.status(error.response.status).json({
+    success: false,
+    error: error.response.data
+  });
+} else {
+  res.status(500).json({ success: false, error: error.message });
+}
+
   }
 });
 
