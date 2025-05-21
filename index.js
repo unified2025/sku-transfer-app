@@ -55,17 +55,21 @@ app.post("/transfer", async (req, res) => {
   try {
     const token = await getSellercloudAuthToken();
 
-    const payload = {
+   const payload = {
       FromSKU: sourceSku,
       ToSKU: destinationSku,
       Qty: quantity,
       FromWarehouseID: fromWarehouseId,
       ToWarehouseID: toWarehouseId,
-      FromBinID: fromBinId,
-      ToBinID: toBinId,
-      TransferReason: transferReason,
-      SerialNumbers: serialNumbers
+      TransferReason: transferReason || "Transfer from web"
     };
+
+    // Only add optional fields if they are defined and non-empty
+    if (fromBinId) payload.FromBinID = fromBinId;
+    if (toBinId) payload.ToBinID = toBinId;
+    if (serialNumbers && serialNumbers.trim()) payload.SerialNumbers = serialNumbers;
+
+
 
     console.log("📦 Sending payload to Sellercloud:", JSON.stringify(payload, null, 2));
 
