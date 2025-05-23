@@ -15,34 +15,39 @@ let tokenExpiresAt = 0;
 
 async function getSellercloudAuthToken() {
   const now = Date.now();
-
-  console.log("🔍 SC_USERNAME loaded:", process.env.SC_USERNAME ? "✅ Present" : "❌ Missing");
-  console.log("🔍 SC_PASSWORD loaded:", process.env.SC_PASSWORD ? "✅ Present" : "❌ Missing");
-
-  if (sellercloudToken && now < tokenExpiresAt) {
-    console.log("✅ Using cached token");
-    return sellercloudToken;
-  }
-
-  try {
-    const response = await axios.post(`${SELLERCLOUD_BASE_URL}/api/token`, {
-      Username: process.env.SC_USERNAME,
-      Password: process.env.SC_PASSWORD
-    });
-
-    console.log("✅ Token response:", response.data);
-
-    const { access_token, expires_in } = response.data;
-    sellercloudToken = access_token;
-    tokenExpiresAt = now + expires_in * 1000 - 30000;
-
-    return sellercloudToken;
-  } catch (error) {
-    console.error("❌ Token fetch failed:", error.response?.data || error.message);
-    throw new Error("Failed to get token");
-  }
+  if (sellercloudToken && now < tokenExpiresAt) return sellercloudToken;
+  const response = await axios.post(
+    `${SELLERCLOUD_BASE_URL}/api/token`,
+    { Username: process.env.SC_USERNAME, Password: process.env.SC_PASSWORD }
+  );
+  const { access_token, expires_in } = response.data;
+  sellercloudToken = access_token;
+  // refresh 30s before expiry
+  tokenExpiresAt = now + (expires_in * 1000) - 30000;
+  return sellercloudToken;
 }
 
+// New endpoint: fetch SKUs with authentication
+app.get("/api/skus", async (req, res) => {
+  const { productGroup, productGroupFilterType, keyword } = req.query;
+  try {
+    const token = await getSellercloudAuthToken();
+    const response = await axios.get(
+      `${SELLERCLOUD_BASE_URL}/api/Catalog`,
+      {
+        params: { productGroup, productGroupFilterType, keyword },
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    // Return the Items array directly
+    return res.json({ success: true, items: response.data.Items || [] });
+  } catch (error) {
+    console.error("❌ SKU fetch error:", error.response?.data || error.message);
+    return res.status(500).json({ success: false, error: error.response?.data || error.message });
+  }
+});
+
+// Existing transfer endpoint
 app.post("/transfer", async (req, res) => {
   const {
     sourceSku, destinationSku, quantity,
@@ -50,10 +55,8 @@ app.post("/transfer", async (req, res) => {
     fromBinId, toBinId,
     transferReason, serialNumbers
   } = req.body;
-
   try {
     const token = await getSellercloudAuthToken();
-
     const payload = {
       FromSKU: sourceSku,
       ToSKU: destinationSku,
@@ -61,40 +64,24 @@ app.post("/transfer", async (req, res) => {
       FromWarehouseID: fromWarehouseId,
       TransferReason: transferReason || "Transfer from web"
     };
-
-    // Add optional fields only if defined
     if (toWarehouseId) payload.ToWarehouseID = toWarehouseId;
     if (fromBinId) payload.FromBinID = fromBinId;
     if (toBinId) payload.ToBinID = toBinId;
-    if (serialNumbers && serialNumbers.trim()) payload.SerialNumbers = serialNumbers;
-
-    console.log("📦 Sending payload to Sellercloud:", JSON.stringify(payload, null, 2));
-
+    if (serialNumbers) payload.SerialNumbers = serialNumbers;
     const response = await axios.post(
       `${SELLERCLOUD_BASE_URL}/api/Inventory/SkuToSkuTransfers`,
       payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
+      { headers: { Authorization: `Bearer ${token}` } }
     );
-
-    res.json({ success: true, data: response.data });
+    return res.json({ success: true, data: response.data });
   } catch (error) {
     console.error("❌ Transfer error:", error.response?.data || error.message);
-
-    if (error.response && error.response.data) {
-      res.status(error.response.status).json({
-        success: false,
-        error: error.response.data
-      });
-    } else {
-      res.status(500).json({ success: false, error: error.message });
-    }
+    const status = error.response?.status || 500;
+    return res.status(status).json({ success: false, error: error.response?.data || error.message });
   }
 });
 
-app.listen(3000, () => {
+// Start server
+typeof process !== 'undefined' && app.listen(3000, () => {
   console.log("🚀 SKU Transfer backend running on port 3000");
 });
