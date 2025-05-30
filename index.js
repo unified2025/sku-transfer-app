@@ -70,7 +70,7 @@ app.get("/capacity", async (req, res) => {
     const customColumns = items[0].CustomColumns || [];
     const capacityColumn = customColumns.find(col => col.ColumnName === "CAPACITY");
 
-    return res.json({ capacity: capacityColumn?.Value || null });
+    return res.json({ success: true, capacity: capacityColumn?.Value || null });
 
   } catch (err) {
     console.error("Error fetching capacity:", err);
