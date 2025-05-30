@@ -56,7 +56,7 @@ app.get("/product-info", async (req, res) => {
 
     const token = await getSellercloudAuthToken();  // <== this must be correct
 
-    const response = await axios.get(`${SELLERCLOUD_BASE_URL}/api/Catalog?keyword=${encodeURIComponent(sku)}`, {
+    const response = await axios.get(`${SELLERCLOUD_BASE_URL}/api/Catalog?sku=${encodeURIComponent(sku)}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
