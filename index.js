@@ -54,7 +54,7 @@ app.get("/capacity", async (req, res) => {
       return res.status(400).json({ error: 'SKU parameter is required' });
     }
 
-    const token = await getToken(); // Ensure this function is working and returns a valid token
+    const token = await getSellercloudAuthToken(); // Ensure this function is working and returns a valid token
 
     const response = await axios.get(`${SELLERCLOUD_BASE_URL}/api/Catalog?keyword=${encodeURIComponent(sku)}`, {
       headers: {
