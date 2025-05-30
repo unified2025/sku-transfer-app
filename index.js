@@ -85,6 +85,7 @@ app.get("/product-info", async (req, res) => {
       color: null, // You can update this if you have a custom COLOR field
       colors: getCustom("COLORS")?.replace(/<[^>]+>/g, " ").trim() || null, // Strip HTML tags
       unlockedSku: getCustom("UNLOCKEDSKU")
+      lockedSku: getCustom("LOCKEDSKU")
     });
 
   } catch (err) {
