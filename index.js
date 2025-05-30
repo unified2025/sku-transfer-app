@@ -47,7 +47,7 @@ app.get("/api/skus", async (req, res) => {
   }
 });
 
-app.get("/capacity", async (req, res) => {
+app.get("/product-info", async (req, res) => {
   try {
     const sku = req.query.sku;
     if (!sku) {
@@ -70,7 +70,19 @@ app.get("/capacity", async (req, res) => {
     const customColumns = items[0].CustomColumns || [];
     const capacityColumn = customColumns.find(col => col.ColumnName === "CAPACITY");
 
-    return res.json({ success: true, capacity: capacityColumn?.Value || null });
+    const getCustom = (name) => custom.find(col => col.ColumnName === name)?.Value || null;
+    return res.json({
+      success: true,
+      found: true,
+      title: item.ProductName || null,
+      upc: item.UPC || null,
+      manufacturerSku: item.ManufacturerSKU || null,
+      capacity: getCustom("CAPACITY"),
+      grade: getCustom("GRADE"),
+      color: getCustom("COLOR"),
+      colors: getCustom("Colors"),
+      unlockedSku: getCustom("Unlockedsku")
+    });
 
   } catch (err) {
     console.error("Error fetching capacity:", err);
