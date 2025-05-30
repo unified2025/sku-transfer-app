@@ -54,9 +54,9 @@ app.get("/product-info", async (req, res) => {
       return res.status(400).json({ success: false, error: 'SKU parameter is required' });
     }
 
-    const token = await getSellercloudAuthToken();  // <== this must be correct
+    const token = await getSellercloudAuthToken();
 
-    const response = await axios.get(`${SELLERCLOUD_BASE_URL}/api/Catalog?sku=${encodeURIComponent(sku)}`, {
+    const response = await axios.get(`${SELLERCLOUD_BASE_URL}/api/Catalog?keyword=${encodeURIComponent(sku)}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -69,7 +69,10 @@ app.get("/product-info", async (req, res) => {
 
     const item = items[0];
     const custom = item.CustomColumns || [];
-    const getCustom = (name) => custom.find(col => col.ColumnName === name)?.Value || null;
+    const getCustom = (name) => {
+      const col = custom.find(c => c.ColumnName?.toUpperCase() === name.toUpperCase());
+      return col?.Value || null;
+    };
 
     return res.json({
       success: true,
@@ -78,17 +81,18 @@ app.get("/product-info", async (req, res) => {
       upc: item.UPC || null,
       manufacturerSku: item.ManufacturerSKU || null,
       capacity: getCustom("CAPACITY"),
-      grade: getCustom("GRADE"),
-      color: getCustom("COLOR"),
-      colors: getCustom("Colors"),
-      unlockedSku: getCustom("Unlockedsku")
+      grade: item.ProductConditionName || null, // Use existing field instead of custom
+      color: null, // You can update this if you have a custom COLOR field
+      colors: getCustom("COLORS")?.replace(/<[^>]+>/g, " ").trim() || null, // Strip HTML tags
+      unlockedSku: getCustom("UNLOCKEDSKU")
     });
 
   } catch (err) {
-    console.error("Error fetching product info:", err); // Check logs here!
+    console.error("❌ Error fetching product info:", err.response?.data || err.message);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
+
 
 
 
