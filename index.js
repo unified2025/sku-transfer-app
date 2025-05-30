@@ -47,6 +47,39 @@ app.get("/api/skus", async (req, res) => {
   }
 });
 
+app.get('/get-capacity', async (req, res) => {
+  try {
+    const sku = req.query.sku;
+    if (!sku) {
+      return res.status(400).json({ error: 'SKU parameter is required' });
+    }
+
+    const token = await getToken(); // Ensure this function is working and returns a valid token
+
+    const response = await axios.get(`${SELLERCLOUD_BASE_URL}/api/Catalog?keyword=${encodeURIComponent(sku)}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const items = response.data?.Items || [];
+    if (items.length === 0) {
+      return res.json({ capacity: null });
+    }
+
+    const customColumns = items[0].CustomColumns || [];
+    const capacityColumn = customColumns.find(col => col.ColumnName === "CAPACITY");
+
+    return res.json({ capacity: capacityColumn?.Value || null });
+
+  } catch (err) {
+    console.error("Error fetching capacity:", err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
 // Existing transfer endpoint
 app.post("/transfer", async (req, res) => {
   const {
