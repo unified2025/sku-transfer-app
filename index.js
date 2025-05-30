@@ -51,10 +51,10 @@ app.get("/product-info", async (req, res) => {
   try {
     const sku = req.query.sku;
     if (!sku) {
-      return res.status(400).json({ error: 'SKU parameter is required' });
+      return res.status(400).json({ success: false, error: 'SKU parameter is required' });
     }
 
-    const token = await getSellercloudAuthToken(); // Ensure this function is working and returns a valid token
+    const token = await getSellercloudAuthToken();  // <== this must be correct
 
     const response = await axios.get(`${SELLERCLOUD_BASE_URL}/api/Catalog?keyword=${encodeURIComponent(sku)}`, {
       headers: {
@@ -64,13 +64,13 @@ app.get("/product-info", async (req, res) => {
 
     const items = response.data?.Items || [];
     if (items.length === 0) {
-      return res.json({ capacity: null });
+      return res.json({ success: true, found: false });
     }
 
-    const customColumns = items[0].CustomColumns || [];
-    const capacityColumn = customColumns.find(col => col.ColumnName === "CAPACITY");
-
+    const item = items[0];
+    const custom = item.CustomColumns || [];
     const getCustom = (name) => custom.find(col => col.ColumnName === name)?.Value || null;
+
     return res.json({
       success: true,
       found: true,
@@ -85,10 +85,11 @@ app.get("/product-info", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error fetching capacity:", err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Error fetching product info:", err); // Check logs here!
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
+
 
 
 
