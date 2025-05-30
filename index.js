@@ -84,7 +84,7 @@ app.get("/product-info", async (req, res) => {
       grade: item.ProductConditionName || null, // Use existing field instead of custom
       color: null, // You can update this if you have a custom COLOR field
       colors: getCustom("COLORS")?.replace(/<[^>]+>/g, " ").trim() || null, // Strip HTML tags
-      unlockedSku: getCustom("UNLOCKEDSKU")
+      unlockedSku: getCustom("UNLOCKEDSKU"),
       lockedSku: getCustom("LOCKEDSKU")
     });
 
