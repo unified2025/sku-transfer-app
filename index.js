@@ -47,7 +47,7 @@ app.get("/api/skus", async (req, res) => {
   }
 });
 
-app.get('/capacity', async (req, res) => {
+app.get("/capacity", async (req, res) => {
   try {
     const sku = req.query.sku;
     if (!sku) {
