@@ -116,6 +116,31 @@ app.get("/api/po/:id", async (req, res) => {
   }
 });
 
+// New: GET Purchase Order Items
+app.get("/api/po/:id/items", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const token = await getSellercloudAuthToken();
+    const response = await axios.get(`${SELLERCLOUD_BASE_URL}/api/PurchaseOrders/${id}/Items`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const items = response.data || [];
+
+    const lines = items.map(item => ({
+      id: item.ID,
+      sku: item.ProductID,
+      quantityOrdered: item.QtyOrdered
+    }));
+
+    res.json({ lines });
+  } catch (error) {
+    console.error("❌ PO Items fetch error:", error.response?.data || error.message);
+    res.status(500).json({ success: false, error: 'Error fetching PO items' });
+  }
+});
+
+
 // New: Submit PO receive
 app.post("/api/po/receive", async (req, res) => {
   const { poId, lines } = req.body;
