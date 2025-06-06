@@ -125,7 +125,7 @@ app.get("/api/po/:id/items", async (req, res) => {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    const items = response.data || [];
+    const items = response.data.Items || [];
 
     const lines = items.map(item => ({
       id: item.ID,
@@ -139,6 +139,7 @@ app.get("/api/po/:id/items", async (req, res) => {
     res.status(500).json({ success: false, error: 'Error fetching PO items' });
   }
 });
+
 
 
 // New: Submit PO receive
