@@ -39,7 +39,6 @@ app.get("/api/skus", async (req, res) => {
         headers: { Authorization: `Bearer ${token}` }
       }
     );
-    // Return the Items array directly
     return res.json({ success: true, items: response.data.Items || [] });
   } catch (error) {
     console.error("❌ SKU fetch error:", error.response?.data || error.message);
@@ -81,9 +80,9 @@ app.get("/product-info", async (req, res) => {
       upc: item.UPC || null,
       manufacturerSku: item.ManufacturerSKU || null,
       capacity: getCustom("CAPACITY"),
-      grade: item.ProductConditionName || null, // Use existing field instead of custom
-      color: null, // You can update this if you have a custom COLOR field
-      colors: getCustom("COLORS")?.replace(/<[^>]+>/g, " ").trim() || null, // Strip HTML tags
+      grade: item.ProductConditionName || null,
+      color: null,
+      colors: getCustom("COLORS")?.replace(/<[^>]+>/g, " ").trim() || null,
       unlockedSku: getCustom("UNLOCKEDSKU"),
       lockedSku: getCustom("LOCKEDSKU")
     });
@@ -94,9 +93,45 @@ app.get("/product-info", async (req, res) => {
   }
 });
 
+// New: Fetch Purchase Order and line items
+app.get("/api/po/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const token = await getSellercloudAuthToken();
+    const response = await axios.get(`${SELLERCLOUD_BASE_URL}/api/PurchaseOrders/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
+    const po = response.data;
+    const lines = po?.purchaseOrderLines?.map(line => ({
+      id: line.id,
+      sku: line.sku,
+      quantityOrdered: line.orderedQuantity
+    })) || [];
 
+    res.json({ lines });
+  } catch (error) {
+    console.error("❌ PO fetch error:", error.response?.data || error.message);
+    res.status(500).json({ success: false, error: 'Error fetching PO' });
+  }
+});
 
+// New: Submit PO receive
+app.post("/api/po/receive", async (req, res) => {
+  const { poId, lines } = req.body;
+  try {
+    const token = await getSellercloudAuthToken();
+    const response = await axios.post(
+      `${SELLERCLOUD_BASE_URL}/api/PurchaseOrders/${poId}/receive`,
+      { lines },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error("❌ PO receive error:", error.response?.data || error.message);
+    res.status(500).json({ success: false, error: 'Error submitting PO receive' });
+  }
+});
 
 // Existing transfer endpoint
 app.post("/transfer", async (req, res) => {
