@@ -126,15 +126,21 @@ app.get("/api/po/:id/items", async (req, res) => {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    console.log("📦 Raw PO Items response:", response.data);
-    // Temporarily return the raw response so we can inspect it
-    return res.json({ raw: response.data });
+    const items = response.data.Items || [];
 
+    const lines = items.map(item => ({
+      id: item.ID,
+      sku: item.ProductID,
+      quantityOrdered: item.QtyUnitsOrdered
+    }));
+
+    return res.json({ lines });
   } catch (error) {
     console.error("❌ PO Items fetch error:", error.response?.data || error.message);
     res.status(500).json({ success: false, error: 'Error fetching PO items' });
   }
 });
+
 
 
 
