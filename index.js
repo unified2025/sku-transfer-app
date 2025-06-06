@@ -117,6 +117,7 @@ app.get("/api/po/:id", async (req, res) => {
 });
 
 // New: GET Purchase Order Items
+// Updated backend route with debugging
 app.get("/api/po/:id/items", async (req, res) => {
   const { id } = req.params;
   try {
@@ -125,15 +126,10 @@ app.get("/api/po/:id/items", async (req, res) => {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    const items = response.data.Items || [];
+    console.log("📦 Raw PO Items response:", response.data);
+    // Temporarily return the raw response so we can inspect it
+    return res.json({ raw: response.data });
 
-    const lines = items.map(item => ({
-      id: item.ID,
-      sku: item.ProductID,
-      quantityOrdered: item.QtyOrdered
-    }));
-
-    res.json({ lines });
   } catch (error) {
     console.error("❌ PO Items fetch error:", error.response?.data || error.message);
     res.status(500).json({ success: false, error: 'Error fetching PO items' });
